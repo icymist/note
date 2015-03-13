@@ -13,12 +13,12 @@ import shutil
 
 home_dir = os.environ['HOME']
 cfg = yaml.load(open(os.path.join(home_dir, '.note/config.yml')))
-cfg_notes_file = cfg['notes_file']
-cfg_notes_files_list = os.path.join(home_dir, cfg['notes_files_list'])
+cfg_note_file = cfg['note_file']
+cfg_note_files_list = os.path.join(home_dir, cfg['note_files_list'])
 cfg_root_dir = os.path.join(home_dir, cfg['root_dir'])
 
-def create_entry(notes_file, note):
-    entries = yaml.load(open(notes_file))
+def create_entry(note_file, note):
+    entries = yaml.load(open(note_file))
 
     uid = uuid4()
     date, time = datetime.now().isoformat('T').split('T')
@@ -37,16 +37,16 @@ def create_entry(notes_file, note):
     else:
         entries = [new_entry]
 
-    yaml.dump(entries, open(notes_file, 'w'))
+    yaml.dump(entries, open(note_file, 'w'))
 
 
 def update_proj_files():
     cmd = ['find',
             cfg_root_dir,
             '-name',
-            cfg_notes_file,
+            cfg_note_file,
            '>',
-           cfg_notes_files_list
+           cfg_note_files_list
            ]
     cmd = ' '.join(cmd)
     output = sp.check_output(cmd, stderr=sp.PIPE, shell=True)
@@ -56,7 +56,7 @@ def update_proj_files():
 
 def create_proj_file():
     pwd = os.getcwd()
-    f = os.path.join(pwd, args.create, cfg_notes_file)
+    f = os.path.join(pwd, args.create, cfg_note_file)
     if not os.path.exists(f):
         open(f, 'w').close()
         print 'Created %s' % (f)
@@ -76,14 +76,14 @@ def longest_leading_common_directory(dir1, dir2):
     return os.path.sep.join(common)
 
 
-def get_notes_file():
-    proj_notes_files = open(cfg_notes_files_list).readlines()
+def get_note_file():
+    proj_note_files = open(cfg_note_files_list).readlines()
 
     # find the best match
     pwd = os.getcwd()
     common_directories = []
-    for proj_notes_file in proj_notes_files:
-        tmp_str = longest_leading_common_directory(proj_notes_file, pwd)
+    for proj_note_file in proj_note_files:
+        tmp_str = longest_leading_common_directory(proj_note_file, pwd)
         common_directories.append(tmp_str)
 
     # return the longest directory
@@ -93,7 +93,7 @@ def get_notes_file():
         if len(d) > len(longest_dir):
             longest_dir = d
 
-    return os.path.join(longest_dir, cfg_notes_file)
+    return os.path.join(longest_dir, cfg_note_file)
 
 
 if __name__ == '__main__':
@@ -104,25 +104,25 @@ if __name__ == '__main__':
     parser.add_argument('-n', '--note', help='Note to be taken')
     parser.add_argument('-i', '--input_file', nargs='?', const=sys.stdin, type=argparse.FileType('r'),
             help='Note to be read from a file')
-    parser.add_argument('-u', '--update', action='store_true', help='Update list of proj-notes files')
+    parser.add_argument('-u', '--update', action='store_true', help='Update list of proj-note files')
     parser.add_argument('-c', '--create', nargs='?', const='.', type=str,
-            help='Create notes file in the present directory')
+            help='Create note file in the present directory')
     
     args = parser.parse_args()
 
 
     if args.note or args.input_file:
-        notes_file = get_notes_file()
-        if os.path.exists(notes_file):
+        note_file = get_note_file()
+        if os.path.exists(note_file):
             # create backup
-            shutil.copy(notes_file, notes_file+'~')  
+            shutil.copy(note_file, note_file+'~')
             # then add the note
             if args.note:
-                create_entry(notes_file, args.note)
+                create_entry(note_file, args.note)
             if args.input_file:
-                create_entry(notes_file, args.input_file.read())
+                create_entry(note_file, args.input_file.read())
         else:
-            print '{notes_file} does not exist'.format(notes_file=notes_file)
+            print '{note_file} does not exist'.format(note_file=note_file)
 
 
     if  args.update:

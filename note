@@ -11,9 +11,11 @@ import shutil
 import subprocess as sp
 import shutil
 
-cfg_notes_file = 'proj-notes.yml'
-cfg_notes_files_list = os.path.join(os.environ['HOME'], 'work/notes-files-list')
-cfg_root_dir = os.path.join(os.environ['HOME'], 'work')
+home_dir = os.environ['HOME']
+cfg = yaml.load(open(os.path.join(home_dir, '.note/config.yml')))
+cfg_notes_file = cfg['notes_file']
+cfg_notes_files_list = os.path.join(home_dir, cfg['notes_files_list'])
+cfg_root_dir = os.path.join(home_dir, cfg['root_dir'])
 
 def create_entry(notes_file, note):
     entries = yaml.load(open(notes_file))
@@ -27,7 +29,8 @@ def create_entry(notes_file, note):
 
     new_entry = {'uid': str(uuid4()),
             'timestamp': timestamp,
-            'note': note.strip()}
+            'note': note.strip(),
+            'context': pwd}
 
     if entries:
         entries.append(new_entry)

@@ -9,9 +9,10 @@ import os
 import sys
 import shutil
 import subprocess as sp
-import shutil
 from launch_editor import read_from_editor
 import textwrap
+import logging
+
 
 home_dir = os.environ['HOME']
 cfg = yaml.load(open(os.path.join(home_dir, '.note/config.yml')))
@@ -19,10 +20,12 @@ cfg_note_file = cfg['note_file']
 cfg_note_files_list = os.path.join(home_dir, cfg['note_files_list'])
 cfg_root_dir = os.path.join(home_dir, cfg['root_dir'])
 
+logging.basicConfig(level=logging.DEBUG)
+
+
 def create_entry(note_file, note):
     entries = yaml.load(open(note_file))
 
-    uid = uuid4()
     date, time = datetime.now().isoformat('T').split('T')
     time = time[:8]
     timestamp = ' '.join([date, time])
@@ -31,29 +34,32 @@ def create_entry(note_file, note):
     print note
 
     new_entry = {'uid': str(uuid4()),
-            'timestamp': timestamp,
-            'note': note,
-            'context': pwd}
+                 'timestamp': timestamp,
+                 'note': note,
+                 'context': pwd}
 
     if entries:
         entries.append(new_entry)
     else:
         entries = [new_entry]
 
-    yaml.dump(entries, open(note_file, 'w'), default_flow_style=False, default_style='|')
+    yaml.dump(entries, open(note_file, 'w'),
+              default_flow_style=False, default_style='|')
 
 
 def update_proj_files():
     cmd = ['find',
-            cfg_root_dir,
-            '-name',
-            cfg_note_file,
+           cfg_root_dir,
+           '-name',
+           cfg_note_file,
            '>',
-           cfg_note_files_list
-           ]
+           cfg_note_files_list]
     cmd = ' '.join(cmd)
-    # output = sp.check_output(cmd, stderr=sp.PIPE, shell=True)
-    output = sp.Popen(cmd, stdout=sp.PIPE, stderr=sp.PIPE, shell=True).communicate()[0]
+    output = sp.Popen(cmd,
+                      stdout=sp.PIPE,
+                      stderr=sp.PIPE,
+                      shell=True).communicate()[0]
+    logging.debug(output)
 
     return None
 
@@ -101,22 +107,27 @@ def get_note_file():
 
 
 if __name__ == '__main__':
-    import argparse
-    
-    parser = argparse.ArgumentParser(description='note taking while working with vasp')
-    
-    parser.add_argument('-n', '--note', help='Note to be taken')
-    parser.add_argument('-i', '--input_file', nargs='?', const=sys.stdin, type=argparse.FileType('r'),
-            help='Note to be read from a file')
-    parser.add_argument('-e', '--editor', action='store_true', help='lanuch editor defined in $EDITOR')
-    parser.add_argument('-u', '--update', action='store_true', help='Update list of proj-note files')
-    parser.add_argument('-c', '--create', nargs='?', const='.', type=str,
-            help='Create note file in the present directory')
-    parser.add_argument('-l', '--list',
-        help='list all the project notes')
-    
-    args = parser.parse_args()
+    parser = argparse.ArgumentParser(
+        description='note taking while working with vasp')
 
+    parser.add_argument('-n', '--note', help='Note to be taken')
+    parser.add_argument('-i', '--input_file',
+                        nargs='?', const=sys.stdin,
+                        type=argparse.FileType('r'),
+                        help='Note to be read from a file')
+    parser.add_argument('-e', '--editor',
+                        action='store_true',
+                        help='lanuch editor defined in $EDITOR')
+    parser.add_argument('-u', '--update',
+                        action='store_true',
+                        help='Update list of proj-note files')
+    parser.add_argument('-c', '--create',
+                        nargs='?', const='.', type=str,
+                        help='Create note file in the present directory')
+    parser.add_argument('-l', '--list',
+                        help='list all the project notes')
+
+    args = parser.parse_args()
 
     if args.note or args.input_file or args.editor:
         note_file = get_note_file()
@@ -140,8 +151,7 @@ if __name__ == '__main__':
         else:
             print '{note_file} does not exist'.format(note_file=note_file)
 
-
-    if  args.update:
+    if args.update:
         update_proj_files()
 
     if args.create:

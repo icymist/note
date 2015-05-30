@@ -10,6 +10,7 @@ import sys
 import shutil
 import subprocess as sp
 import shutil
+from launch_editor import read_from_editor
 
 home_dir = os.environ['HOME']
 cfg = yaml.load(open(os.path.join(home_dir, '.note/config.yml')))
@@ -26,10 +27,11 @@ def create_entry(note_file, note):
     timestamp = ' '.join([date, time])
     pwd = os.getcwd()
     note = note.strip()
+    print note
 
     new_entry = {'uid': str(uuid4()),
             'timestamp': timestamp,
-            'note': note.strip(),
+            'note': note,
             'context': pwd}
 
     if entries:
@@ -37,7 +39,7 @@ def create_entry(note_file, note):
     else:
         entries = [new_entry]
 
-    yaml.dump(entries, open(note_file, 'w'))
+    yaml.dump(entries, open(note_file, 'w'), default_flow_style=False, default_style='|')
 
 
 def update_proj_files():
@@ -49,7 +51,8 @@ def update_proj_files():
            cfg_note_files_list
            ]
     cmd = ' '.join(cmd)
-    output = sp.check_output(cmd, stderr=sp.PIPE, shell=True)
+    # output = sp.check_output(cmd, stderr=sp.PIPE, shell=True)
+    output = sp.Popen(cmd, stdout=sp.PIPE, stderr=sp.PIPE, shell=True).communicate()[0]
 
     return None
 
@@ -89,7 +92,7 @@ def get_note_file():
     # return the longest directory
     longest_dir = ''
     for d in common_directories:
-        print d, len(d)
+        # print d, len(d)
         if len(d) > len(longest_dir):
             longest_dir = d
 
@@ -104,15 +107,19 @@ if __name__ == '__main__':
     parser.add_argument('-n', '--note', help='Note to be taken')
     parser.add_argument('-i', '--input_file', nargs='?', const=sys.stdin, type=argparse.FileType('r'),
             help='Note to be read from a file')
+    parser.add_argument('-e', '--editor', action='store_true', help='lanuch editor defined in $EDITOR')
     parser.add_argument('-u', '--update', action='store_true', help='Update list of proj-note files')
     parser.add_argument('-c', '--create', nargs='?', const='.', type=str,
             help='Create note file in the present directory')
     
+    list = args.list 
+    
     args = parser.parse_args()
 
 
-    if args.note or args.input_file:
+    if args.note or args.input_file or args.editor:
         note_file = get_note_file()
+        print 'Taking note in {note_file}'.format(note_file=note_file)
         if os.path.exists(note_file):
             # create backup
             shutil.copy(note_file, note_file+'~')
@@ -121,6 +128,14 @@ if __name__ == '__main__':
                 create_entry(note_file, args.note)
             if args.input_file:
                 create_entry(note_file, args.input_file.read())
+            if args.editor:
+                note = read_from_editor()
+                if note:
+                    create_entry(note_file, note)
+                else:
+                    print 'Got empty note from editor... Exiting...'
+                    sys.exit(-1)
+
         else:
             print '{note_file} does not exist'.format(note_file=note_file)
 

@@ -11,6 +11,7 @@ import shutil
 import subprocess as sp
 import shutil
 from launch_editor import read_from_editor
+import textwrap
 
 home_dir = os.environ['HOME']
 cfg = yaml.load(open(os.path.join(home_dir, '.note/config.yml')))
@@ -111,8 +112,8 @@ if __name__ == '__main__':
     parser.add_argument('-u', '--update', action='store_true', help='Update list of proj-note files')
     parser.add_argument('-c', '--create', nargs='?', const='.', type=str,
             help='Create note file in the present directory')
-    
-    list = args.list 
+    parser.add_argument('-l', '--list',
+        help='list all the project notes')
     
     args = parser.parse_args()
 
@@ -146,3 +147,16 @@ if __name__ == '__main__':
     if args.create:
         create_proj_file()
         update_proj_files()
+
+    if args.list:
+        note_file = get_note_file()
+        notes = yaml.load(open(note_file))
+
+        wrapper = textwrap.TextWrapper()
+        wrapper.initial_indent = "        "
+        wrapper.subsequent_indent = "        "
+
+        for note in notes:
+            print note['timestamp']
+            print wrapper.fill(note['note'])
+            print

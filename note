@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#! /usr/bin/env python
 # encoding: utf-8
 
 import yaml
@@ -124,7 +124,7 @@ if __name__ == '__main__':
     parser.add_argument('-c', '--create',
                         nargs='?', const='.', type=str,
                         help='Create note file in the present directory')
-    parser.add_argument('-l', '--list',
+    parser.add_argument('-l', '--list', action='store_true',
                         help='list all the project notes')
 
     args = parser.parse_args()
@@ -168,5 +168,7 @@ if __name__ == '__main__':
 
         for note in notes:
             print note['timestamp']
+            print wrapper.fill(note['context'])
+            print
             print wrapper.fill(note['note'])
             print
